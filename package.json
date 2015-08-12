@@ -1,0 +1,30 @@
+{
+  "name": "React-Lunch-and-Learn",
+  "version": "0.0.1",
+  "description": "An example application to illustrate the usage of React.js",
+  "author": "Rob Abby <robert.abby@savogroup.com>",
+  "contributors": [
+    {
+      "name": "Foo Bar",
+      "email": "foo.bar@example.com"
+    }
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "browserify": "^11.0.1",
+    "connect-livereload": "^0.5.3",
+    "express": "^4.13.3",
+    "gulp": "^3.9.0",
+    "gulp-browserify": "^0.5.1",
+    "gulp-clean": "^0.3.1",
+    "gulp-concat": "^2.6.0",
+    "gulp-embedlr": "^0.5.2",
+    "gulp-jshint": "^1.11.2",
+    "gulp-livereload": "^3.8.0",
+    "gulp-util": "^3.0.6",
+    "tiny-lr": "^0.1.6"
+  },
+  "preferGlobal": true,
+  "private": true,
+  "license": "MIT"
+}

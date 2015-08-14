@@ -1,9 +1,12 @@
 var gulp = require('gulp');
-var gutil = require('gulp-util');
-var jshint = require('gulp-jshint');
-var browserify = require('gulp-browserify');
-var concat = require('gulp-concat');
-var clean = require('gulp-clean');
+var uglify = require('gulp-uglify');
+var htmlreplace = require('gulp-html-replace');
+var source = require('vinyl-source-stream');
+var browserify = require('browserify');
+var watchify = require('watchify');
+var reactify = require('reactify');
+var streamify = require('gulp-streamify');
+var glob = require('glob');
 
 // Webserver with livereload
 var livereload = require('gulp-livereload'),
@@ -25,39 +28,78 @@ function notifyLivereload(event) {
   });
 }
 
-// JSHint Task
-gulp.task('lint', function() {
-  gulp.src('./app/js/*.js')
-  .pipe(jshint())
-  .pipe(jshint.reporter('default'));
+var path = {
+  HTML: 'src/index.html',
+  MINIFIED_OUT: 'build.min.js',
+  OUT: 'build.js',
+  DEST: 'dist',
+  DEST_BUILD: 'dist/build',
+  DEST_SRC: 'dist/src',
+  ENTRY_POINT: glob.sync('./src/js/**/*.js')
+};
+
+gulp.task('copy', function(){
+  gulp.src(path.HTML)
+    .pipe(gulp.dest(path.DEST));
 });
 
-// Watch Task
+gulp.task('replaceHTML', function(){
+  gulp.src(path.HTML)
+    .pipe(htmlreplace({
+      'js': 'build/' + path.MINIFIED_OUT
+    }))
+    .pipe(gulp.dest(path.DEST));
+});
+
 gulp.task('watch', function() {
-  // Watch Scripts
-  gulp.watch(['app/js/*.js', 'app/js/**/*.js'], notifyLivereload);
+  gulp.watch(path.HTML, ['copy']);
 
-  // Watch Views
-  gulp.watch(['app/index.html', 'app/views/**/*.html'], notifyLivereload);
+  var watcher = watchify(browserify({
+    entries: [path.ENTRY_POINT],
+    transform: [reactify],
+    debug: true,
+    cache: {}, packageCache: {}, fullPaths: true
+  }));
+
+  return watcher.on('update', function () {
+    watcher.bundle()
+      .pipe(source(path.OUT))
+      .pipe(gulp.dest(path.DEST_SRC))
+      console.log('Updated');
+  })
+    .bundle()
+    .pipe(source(path.OUT))
+    .pipe(gulp.dest(path.DEST_SRC));
 });
 
-// Serve task
-gulp.task('default', ['lint', 'watch'], function() {
+gulp.task('build', function(){
+  browserify({
+    entries: [path.ENTRY_POINT],
+    transform: [reactify]
+  })
+    .bundle()
+    .pipe(source(path.MINIFIED_OUT))
+    .pipe(streamify(uglify(path.MINIFIED_OUT)))
+    .pipe(gulp.dest(path.DEST_BUILD));
+});
+
+gulp.task('prod', ['replaceHTML', 'build']);
+
+gulp.task('default', ['watch'], function() {
   // Set up an express server (but not starting it yet)
   var server = express();
   // Add live reload
   server.use(require('connect-livereload')({port: livereloadport}));
   // Use our 'dist' folder as rootfolder
-  server.use(express.static('./app'));
+  server.use(express.static('./dist'));
   server.all('/*', function(req, res) {
-    res.sendFile('index.html', { root: 'app' });
+    res.sendFile('index.html', { root: 'dist' });
   });
 
   // Start webserver
   server.listen(serverport);
   // Start live reload
   tinylr.listen(livereloadport);
-  // Run the watch task, to keep taps on changes
 
   console.log('Server is running on port: ' + serverport);
 });

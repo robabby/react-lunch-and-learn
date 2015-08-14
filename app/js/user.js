@@ -6,6 +6,8 @@
     dataType: 'json',
     success: function(data){
       console.log(data);
+
+      user = data;
     }
   });
 })();
